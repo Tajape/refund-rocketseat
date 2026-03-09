@@ -4,8 +4,11 @@ const amount = document.getElementById("amount")
 const expense = document.getElementById("expense")
 const category = document.getElementById("category")
 
+
 //seleciona os elementos da lista
 const expenseList = document.querySelector("ul");
+const expensesTotal = document.querySelector("aside header h2")
+const expensesQuantities = document.querySelector("aside header p span")
 
 //captura o evento de input para fomatar o valor
 amount.oninput = () => {
@@ -47,6 +50,7 @@ form.onsubmit = (event) => {
     expenseAdd(newExpense)
 }
 
+//esse metódo adiciona um novo item na lista
 function expenseAdd(newExpense){
     try {
         //cria o elemento para adicionar na lista
@@ -76,13 +80,25 @@ function expenseAdd(newExpense){
         //adiciona o valor da despesa
         const expenseAmount = document.createElement ("span")
         expenseAmount.classList.add("expense-amount")
-        expenseAmount.innerHTML = `<span>R$</span>${newExpense.amount.toUpperCase().replace("R$", "")}`
+        expenseAmount.innerHTML = `<span>R$</span>${newExpense.amount.toUpperCase().replace("R$", "").trim()}`
+
+        //cria o icone de remover
+        const removeIcon = document.createElement("img")
+        removeIcon.classList.add("remove-icon")
+        removeIcon.setAttribute("src", "img/remove.svg")
+        removeIcon.setAttribute("alt", "remover")
 
         //adiciona as informações no item.  
-        expenseItem.append(expenseIcon, expenseInfo, expenseAmount)
+        expenseItem.append(expenseIcon, expenseInfo, expenseAmount, removeIcon)
 
         //adiciona o item na lista
         expenseList.append(expenseItem)
+
+        //limpa o formulario para adicionar um novo item
+        formClear()
+        
+        // Atualiza os totais
+        updateTotals()
 
     } catch (error) {
         alert("Não foi possivel atualizar a lista de despesas");
@@ -90,3 +106,79 @@ function expenseAdd(newExpense){
     }
 }
 
+//atualiza os totais
+function updateTotals(){
+    try{
+        // recupera todos os itens (li) da lista (ul)
+        const items = expenseList.children
+
+        //atualiza a quantidade de itens da lista
+        expensesQuantities.textContent = `${items.length} ${items.length > 1 ? "despesas" : "despesa"}`
+
+        // variavel para incrementar o total   
+        let total = 0
+
+        //percorre cada item (li) da lista (ul)
+        for(let item = 0; item < items.length; item++){
+            const itemAmount = items[item].querySelector(".expense-amount")
+
+            //remove caracteres não numericos e substitui a virgula pelo ponto
+            let value = itemAmount.textContent.replace(/[^\d,]/g, "").replace(",",".")
+
+            //converte o valor para float
+            value = parseFloat(value)
+            
+            //verificar se é um numero valido 
+            if(isNaN(value)){
+                return alert("nao foi possivel calcular o total. O valor não parece ser um número")
+            }
+        
+            //incrementar o valor total
+            total += Number(value)
+        }
+    
+        //cria a span para adicionar o R$ formatado
+        const symbolBRL = document.createElement("small")
+        symbolBRL.textContent = "R$"
+        
+        //formata o valor e remove o R$ que será exibido pela small com um estilo costumizado
+        total = formatCurrencyBRL(total).toUpperCase().replace("R$","")
+
+        //limpa o conteudo do elemento
+        expensesTotal.innerHTML = ""
+
+
+        expensesTotal.append(symbolBRL, total)
+        
+    }catch (error) { 
+        console.log(error)
+        alert("Não foi possivel atualizar os dados")
+    }
+}
+
+// Evento que captura o clique nos itens da lista
+expenseList.addEventListener("click", function (event){
+
+    //verifica se o elemento clicando é o icone de remover
+    if(event.target.classList.contains("remove-icon")){
+
+        //obtem a li pai do elemento clicado
+        const item = event.target.closest(".expense")
+
+        //remove o item da lista
+        item.remove()
+    }
+
+    updateTotals()
+
+})
+
+
+function formClear(){
+    expense.value = ""
+    category.value = ""
+    amount.value = ""
+
+    //coloca o foco no input de amount. 
+    expense.focus()
+}
